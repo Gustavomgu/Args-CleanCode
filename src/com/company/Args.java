@@ -1,19 +1,16 @@
 package com.company;
-
-import jdk.nashorn.internal.runtime.ArgumentSetter;
-
 import java.text.ParseException;
 import java.util.*;
 
 public class Args {
     private String schema;
     private String[] args;
-    private boolean valid = true;
-    private Set<Character> unexpectedArguments = new TreeSet<Character>();
-    private Map<Character, Boolean> booleanArgs = new HashMap<Character, Boolean>();
-    private Map<Character, String> stringArgs = new HashMap<Character, String>();
-    private Map<Character,Integer> integerArgs = new HashMap<Character, Integer>();
-    private Set<Character> argsFound = new HashSet<Character>();
+    private boolean valid;
+    private Set<Character> unexpectedArguments = new TreeSet<>();
+    private Map<Character, Boolean> booleanArgs = new HashMap<>();
+    private Map<Character, String> stringArgs = new HashMap<>();
+    private Map<Character,Integer> integerArgs = new HashMap<>();
+    private Set<Character> argsFound = new HashSet<>();
     private int currentArgument;
     private char errorArgumentId = '\0';
     private String errorParameter = "TILT";
@@ -36,7 +33,7 @@ public class Args {
         parseSchema();
         try{
             parseArguments();
-        } catch(ArgsException e) {
+        } catch(ArgsException ignored) {
         }
         return valid;
     }
@@ -192,9 +189,70 @@ public class Args {
         }
     }
 
-    // Todo
-    // Continuar a parter de cardinality()
+    public int cardinality() {
+        return argsFound.size();
+    }
 
+    public String usage() {
+        if (schema.length() > 0) {
+            return "-[" + schema + "]";
+        } else {
+            return "";
+        }
+    }
+
+    public String errorMenssage() throws Exception {
+        switch (errorCode) {
+            case OK:
+                throw new Exception("TILT: Should not get here.");
+            case UNEXPECTED_ARGUMENT:
+                return unexpectedArgumentMessage();
+            case MISSING_STRING:
+                return String.format("Could not find string parameter for -%c.", errorArgumentId);
+            case INVALID_INTEGER:
+                return String.format("Argument -%c expects an integer but was %s.", errorArgumentId, errorParameter);
+            case MISSING_INTEGER:
+                return String.format("Could not find integer parameter for -%c.", errorArgumentId);
+        }
+        return "";
+    }
+
+    private String unexpectedArgumentMessage() {
+        StringBuilder message = new StringBuilder("Argument(s) -");
+        for (char c: unexpectedArguments) {
+            message.append(c);
+        }
+        message.append(" unexpected.");
+        return message.toString();
+    }
+
+    private boolean falseIfNull(Boolean b) {
+        return b!= null && b;
+    }
+
+    private int zeroIfNull(Integer i) {
+        return i == null ? 0 : i;
+    }
+
+    private String blankIfNull(String s) {
+        return s == null ? "" : s;
+    }
+
+    public String getString(char arg){
+        return blankIfNull(stringArgs.get(arg));
+    }
+
+    public int getInt(char arg) {
+        return zeroIfNull(integerArgs.get(arg));
+    }
+
+    public boolean has(char arg) {
+        return argsFound.contains(arg);
+    }
+
+    public boolean isValid() {
+        return valid;
+    }
 
     private class ArgsException extends Exception {
     }
